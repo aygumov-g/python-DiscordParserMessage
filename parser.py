@@ -47,9 +47,18 @@ def get_message_time(message_created_at):
 	
 	return "{}.{}.{} {}:{}:{}".format(year, month, day, hour, minute, second)
 
-def append_message_CMR(message):
+def append_message_CMR(message, guild):
 
-	def check_message_CMR(messageBracketsContent, message):
+	def check(sim):
+#		if sim == 1 or sim == 2 or sim == 3 or sim == 4 or sim == 5 or sim == 6 or sim == 7 or sim == 8 or sim == 9 or sim == 0:
+		if sim == "@" or sim == "#":
+			return True
+		else:
+			return False 
+
+	def check_message_CMR(messageBracketsContent, message, guild):
+
+		returnMessage = "<сообщение не распознано>"
 
 		if "#" in messageBracketsContent:
 			returnMessageBracketsContent = messageBracketsContent.replace("#", "")
@@ -57,15 +66,21 @@ def append_message_CMR(message):
 				returnMessage = message.replace(f"<{messageBracketsContent}>", f"#{str(me.get_channel(int(returnMessageBracketsContent)))}")
 			except:
 				pass
-		elif "!" in messageBracketsContent:
+		elif "@!" in messageBracketsContent:
 			returnMessageBracketsContent = messageBracketsContent.replace("@!", "")
 			try:
-				returnMessage = message.replace(f"<{messageBracketsContent}>", f"@!{str(me.get_user(int(returnMessageBracketsContent)))}")
+				returnMessage = message.replace(f"<{messageBracketsContent}>", f"@{str(me.get_user(int(returnMessageBracketsContent)))}")
 			except:
 				pass
+		elif "@&" in messageBracketsContent:
+			returnMessageBracketsContent = messageBracketsContent.replace("@&", "")
+			try:
+				returnMessage = message.replace(f"<{messageBracketsContent}>", f"@{str(discord.utils.get(guild.roles, int(returnMessageBracketsContent)))}")
+			except:
+				pass			
 
 		if "<" in returnMessage or ">" in returnMessage:
-			return append_message_CMR(returnMessage)
+			return append_message_CMR(returnMessage, guild)
 		else:
 			return returnMessage
 
@@ -80,16 +95,17 @@ def append_message_CMR(message):
 
 			while(messageSimIntBracketsCloseIndex >= 0):
 				if message[messageSimIntBracketsCloseIndex] == "<":
+					if not message[messageSimIntBracketsCloseIndex+1] == ":" and check(message[messageSimIntBracketsCloseIndex+1]):
 
-					bracketsOpenIndex = messageSimIntBracketsCloseIndex
-					bracketsCloseIndexBracketsOpenIndex = messageSimIntBracketsCloseIndex + 1
+						bracketsOpenIndex = messageSimIntBracketsCloseIndex
+						bracketsCloseIndexBracketsOpenIndex = messageSimIntBracketsCloseIndex + 1
 
-					while(bracketsCloseIndexBracketsOpenIndex < messageSimInt):
-						messageBracketsContent += message[bracketsCloseIndexBracketsOpenIndex]
+						while(bracketsCloseIndexBracketsOpenIndex < messageSimInt):
+							messageBracketsContent += message[bracketsCloseIndexBracketsOpenIndex]
 
-						bracketsCloseIndexBracketsOpenIndex += 1
+							bracketsCloseIndexBracketsOpenIndex += 1
 
-					break
+						break
 
 				messageSimIntBracketsCloseIndex -= 1
 
@@ -98,7 +114,7 @@ def append_message_CMR(message):
 		messageSimInt += 1
 
 	if not messageBracketsContent == "":
-		return check_message_CMR(messageBracketsContent, message)
+		return check_message_CMR(messageBracketsContent, message, guild)
 	else:
 		return message
 
@@ -119,9 +135,9 @@ async def on_ready():
 
 						async for message in channel.history(limit=messageParsingLen):
 							try:
-								msg = f"Message at {get_message_time(message.created_at)} from {message.author}: {append_message_CMR(message.content)}\n\n"
+								msg = f"Message at {get_message_time(message.created_at)} from {message.author}: {append_message_CMR(message.content, guild)}\n\n"
 								fileChannel.write(f"{msg}")
-							except:
+							except Exception as e:
 								log(5, None, None, checkComplited)
 
 						fileChannel.close()
