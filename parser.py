@@ -19,6 +19,9 @@ def log(logParam, guild=None, channel=None, checkComplited=None):
 		color = colorama.Fore.GREEN
 		print(color, f"Folder \"channels\" server {guild.id} ({guild.name}) completed successfully", colorama.Fore.WHITE, sep="")
 	elif logParam == 5:
+		color = colorama.Fore.RED
+		print(color, f"[{checkComplited}]: The message could not be recorded", colorama.Fore.WHITE, sep="")
+	elif logParam == 6:
 		color = colorama.Fore.GREEN
 		print(color, f"\n\nData: {os.getcwd()}\servers", colorama.Fore.WHITE, sep="")
 
@@ -33,7 +36,6 @@ def main_create_folder():
 			except:
 				log(1, guild)
 
-
 def get_message_time(message_created_at):
 	hour = ("0" * 1) + str(message_created_at.hour) if len(str(message_created_at.hour)) == 1 else str(message_created_at.hour)
 	minute = ("0" * 1) + str(message_created_at.minute) if len(str(message_created_at.minute)) == 1 else str(message_created_at.minute)
@@ -45,6 +47,61 @@ def get_message_time(message_created_at):
 	
 	return "{}.{}.{} {}:{}:{}".format(year, month, day, hour, minute, second)
 
+def append_message_CMR(message):
+
+	def check_message_CMR(messageBracketsContent, message):
+
+		if "#" in messageBracketsContent:
+			returnMessageBracketsContent = messageBracketsContent.replace("#", "")
+			try:
+				returnMessage = message.replace(f"<{messageBracketsContent}>", f"#{str(me.get_channel(int(returnMessageBracketsContent)))}")
+			except:
+				pass
+		elif "!" in messageBracketsContent:
+			returnMessageBracketsContent = messageBracketsContent.replace("@!", "")
+			try:
+				returnMessage = message.replace(f"<{messageBracketsContent}>", f"@!{str(me.get_user(int(returnMessageBracketsContent)))}")
+			except:
+				pass
+
+		if "<" in returnMessage or ">" in returnMessage:
+			return append_message_CMR(returnMessage)
+		else:
+			return returnMessage
+
+	messageBracketsContent = ""
+	messageSimInt = 0
+
+	while messageSimInt < len(message):
+		if message[messageSimInt] == ">":
+
+			bracketsCloseIndex = messageSimInt
+			messageSimIntBracketsCloseIndex = messageSimInt - 1
+
+			while(messageSimIntBracketsCloseIndex >= 0):
+				if message[messageSimIntBracketsCloseIndex] == "<":
+
+					bracketsOpenIndex = messageSimIntBracketsCloseIndex
+					bracketsCloseIndexBracketsOpenIndex = messageSimIntBracketsCloseIndex + 1
+
+					while(bracketsCloseIndexBracketsOpenIndex < messageSimInt):
+						messageBracketsContent += message[bracketsCloseIndexBracketsOpenIndex]
+
+						bracketsCloseIndexBracketsOpenIndex += 1
+
+					break
+
+				messageSimIntBracketsCloseIndex -= 1
+
+			break
+
+		messageSimInt += 1
+
+	if not messageBracketsContent == "":
+		return check_message_CMR(messageBracketsContent, message)
+	else:
+		return message
+
 @me.event
 async def on_ready():
 	main_create_folder()
@@ -53,7 +110,7 @@ async def on_ready():
 
 	for guild in me.guilds:
 		for channel in me.get_guild(guild.id).channels:
-			
+
 			messages = ""
 
 			if isinstance(channel, discord.channel.TextChannel):
@@ -61,9 +118,12 @@ async def on_ready():
 					with io.open(f"servers\{guild.id} ({guild.name})\{channel}.txt", "w", encoding="utf-8") as fileChannel:
 
 						async for message in channel.history(limit=messageParsingLen):
-							messages += f"Message at {get_message_time(message.created_at)} from {message.author}: {message.content}\n\n"
+							try:
+								msg = f"Message at {get_message_time(message.created_at)} from {message.author}: {append_message_CMR(message.content)}\n\n"
+								fileChannel.write(f"{msg}")
+							except:
+								log(5, None, None, checkComplited)
 
-						fileChannel.write(f"{messages}")
 						fileChannel.close()
 
 						log(2, None, channel, checkComplited)
@@ -74,6 +134,6 @@ async def on_ready():
 
 		log(4, guild)
 
-	log(5)
+	log(6)
 
 me.run("DISCORD ACCOUNT TOKEN", bot=False)
