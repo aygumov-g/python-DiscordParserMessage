@@ -5,25 +5,25 @@ me = commands.Bot(command_prefix=discord, intents=discord.Intents.all(), self_bo
 
 messageParsingLen = 50 # number of messages that will be parsed
 
-def log(logParam, guild=None, channel=None, checkComplited=None):
-	if logParam == 1:
-		color = colorama.Fore.RED
-		print(color, f"Failed to create a folder for the server: {guild.id} ({guild.name})", colorama.Fore.WHITE, sep="")
-	elif logParam == 2:
-		color = colorama.Fore.YELLOW
-		print(color, f"[{checkComplited}]: Channel added successfully: ", colorama.Fore.WHITE, f"\"{channel}\"", sep="")
-	elif logParam == 3:
-		color = colorama.Fore.RED
-		print(color, f"[{checkComplited}]: Couldn't add a channel: ", colorama.Fore.WHITE, f"\"{channel}\"", sep="")
-	elif logParam == 4:
-		color = colorama.Fore.GREEN
-		print(color, f"Folder \"channels\" server {guild.id} ({guild.name}) completed successfully", colorama.Fore.WHITE, sep="")
-	elif logParam == 5:
-		color = colorama.Fore.RED
-		print(color, f"[{checkComplited}]: The message could not be recorded", colorama.Fore.WHITE, sep="")
-	elif logParam == 6:
+def log(params):
+	if params['LogParam'] == 0:
 		color = colorama.Fore.GREEN
 		print(color, f"\n\nData: {os.getcwd()}\servers", colorama.Fore.WHITE, sep="")
+	elif params['LogParam'] == 1:
+		color = colorama.Fore.RED
+		print(color, f"Failed to create a folder for the server: {params['Guild'].id} ({params['Guild'].name}) [{params['Exception']}]:", colorama.Fore.WHITE, sep="")
+	elif params['LogParam'] == 2:
+		color = colorama.Fore.YELLOW
+		print(color, f"[{params['CheckComplited']}]: Channel added successfully: ", colorama.Fore.WHITE, f"\"{params['Channel']}\"", sep="")
+	elif params['LogParam'] == 3:
+		color = colorama.Fore.RED
+		print(color, f"[{params['CheckComplited']}]: [{params['Exception']}]: Couldn't add a channel: ", colorama.Fore.WHITE, f"\"{params['Channel']}\"", sep="")
+	elif params['LogParam'] == 4:
+		color = colorama.Fore.GREEN
+		print(color, f"Folder \"channels\" server {params['Guild'].id} ({params['Guild'].name}) completed successfully", colorama.Fore.WHITE, sep="")
+	elif params['LogParam'] == 5:
+		color = colorama.Fore.RED
+		print(color, f"[{params['CheckComplited']}]: [{params['Exception']}]: The message could not be recorded", colorama.Fore.WHITE, sep="")
 
 def main_create_folder():
 	for guild in me.guilds:
@@ -33,8 +33,12 @@ def main_create_folder():
 		if not os.path.isdir(f"servers\{guild.id} ({guild.name})"):
 			try:
 				os.mkdir(f"servers\{guild.id} ({guild.name})")
-			except:
-				log(1, guild)
+			except Exception as e:
+				log({
+					"LogParam": 1,
+					"Guild": guild,
+					"Exception": e
+				})
 
 def get_message_time(message_created_at):
 	hour = ("0" * 1) + str(message_created_at.hour) if len(str(message_created_at.hour)) == 1 else str(message_created_at.hour)
@@ -50,11 +54,7 @@ def get_message_time(message_created_at):
 def append_message_CMR(message, guild):
 
 	def check(sim):
-#		if sim == 1 or sim == 2 or sim == 3 or sim == 4 or sim == 5 or sim == 6 or sim == 7 or sim == 8 or sim == 9 or sim == 0:
-		if sim == "@" or sim == "#":
-			return True
-		else:
-			return False 
+		return True if sim == "@" or sim == "#" else False
 
 	def check_message_CMR(messageBracketsContent, message, guild):
 
@@ -79,10 +79,9 @@ def append_message_CMR(message, guild):
 			except:
 				pass			
 
-		if "<" in returnMessage or ">" in returnMessage:
-			return append_message_CMR(returnMessage, guild)
-		else:
-			return returnMessage
+
+		return append_message_CMR(returnMessage, guild) if "<" in returnMessage or ">" in returnMessage else returnMessage
+
 
 	messageBracketsContent = ""
 	messageSimInt = 0
@@ -113,10 +112,7 @@ def append_message_CMR(message, guild):
 
 		messageSimInt += 1
 
-	if not messageBracketsContent == "":
-		return check_message_CMR(messageBracketsContent, message, guild)
-	else:
-		return message
+		return check_message_CMR(messageBracketsContent, message, guild) if not messageBracketsContent == "" else message
 
 @me.event
 async def on_ready():
@@ -138,18 +134,35 @@ async def on_ready():
 								msg = f"Message at {get_message_time(message.created_at)} from {message.author}: {append_message_CMR(message.content, guild)}\n\n"
 								fileChannel.write(f"{msg}")
 							except Exception as e:
-								log(5, None, None, checkComplited)
+								log({
+									"LogParam": 5,
+									"CheckComplited": checkComplited
+								})
 
 						fileChannel.close()
 
-						log(2, None, channel, checkComplited)
-				except:
-					log(3, None, channel, checkComplited)
+						log({
+							"LogParam": 2,
+							"Channel": channel,
+							"CheckComplited": checkComplited
+						})
+				except Exception as e:
+					log({
+						"LogParam": 3,
+						"Channel": channel,
+						"CheckComplited": checkComplited,
+						"Exception": e
+					})
 
-					checkComplited += 1
+				checkComplited += 1
 
-		log(4, guild)
+		log({
+			"LogParam": 4,
+			"Guild": guild
+		})
 
-	log(6)
+	log({
+		"LogParam": 0
+	})
 
 me.run("DISCORD ACCOUNT TOKEN", bot=False)
