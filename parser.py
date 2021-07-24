@@ -112,7 +112,7 @@ def append_message_CMR(message, guild):
 
 		messageSimInt += 1
 
-		return check_message_CMR(messageBracketsContent, message, guild) if not messageBracketsContent == "" else message
+	return check_message_CMR(messageBracketsContent, message, guild) if not messageBracketsContent == "" else message
 
 @me.event
 async def on_ready():
