@@ -131,9 +131,7 @@ def edit_message(message, guild):
 		else:
 			returns = f"{message.content}"
 
-		return append_message_CMR(returns, guild)
-
-	
+		return returns	
 
 	def CONTROLLER(message, guild):
 
@@ -142,8 +140,8 @@ def edit_message(message, guild):
 		message = append_message_CMR(message, guild)
 
 		return message
-	
-	return get_message_attachments(message, guild)
+
+	return CONTROLLER(message, guild)
 
 
 
