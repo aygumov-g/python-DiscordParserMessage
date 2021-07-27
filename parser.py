@@ -116,7 +116,36 @@ def edit_message(message, guild):
 
 		return check_message_CMR(messageBracketsContent, message, guild) if not messageBracketsContent == "" else message
 
-	return append_message_CMR(message, guild)
+	def get_message_attachments(message, guild):
+
+		messageAttachments = ""
+
+		for attach in message.attachments:
+			messageAttachments += f"<{attach.filename}|{attach.url}>"
+		
+		if not messageAttachments == "":
+			if not message.content == "":
+				returns = f"{messageAttachments}\n{message.content}".replace("  ", " ")
+			else:
+				returns = f"{messageAttachments}{message.content}".replace("  ", " ")
+		else:
+			returns = f"{message.content}"
+
+		return append_message_CMR(returns, guild)
+
+	
+
+	def CONTROLLER(message, guild):
+
+		message = get_message_attachments(message, guild)
+
+		message = append_message_CMR(message, guild)
+
+		return message
+	
+	return get_message_attachments(message, guild)
+
+
 
 @me.event
 async def on_ready():
@@ -135,8 +164,8 @@ async def on_ready():
 
 						async for message in channel.history(limit=messageParsingLen):
 							try:
-								probel = "=" * 100
-								msg = f"Message at {get_message_time(message.created_at)} from {message.author}: {edit_message(message.content, guild)}\n" + f"{probel}\n"
+								probel = "=" * 200
+								msg = f"Message at {get_message_time(message.created_at)} from {message.author}: {edit_message(message, guild)}\n" + f"{probel}\n"
 								fileChannel.write(f"{msg}")
 							except Exception as e:
 								log({
